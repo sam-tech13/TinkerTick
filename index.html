@@ -57,6 +57,12 @@
         }
 
 
+        .status-error {  /* Styles the word 'Error' */
+            color: #e05a5a;
+            font-weight: 600;
+        }
+    
+
         .workspace {   /* Styles the main middle area below the header */
             display: flex; 
             flex: 1;
@@ -123,17 +129,57 @@
             background: #0d0b10;
             box-shadow: 0 0 20px rgba(212, 163, 89, 0.15);
         }
+
+
+
+        /* Right-side Diagnostics panel */
+        .metrics-panel {
+            width: 240px;
+            background: #181522;
+            border-left: 2px solid #3d2d18;
+            padding: 16px;
+        }
+
+        .metrics-panel h3 {
+            margin: 0 0 12px;
+            font-size: rem;
+            color: #d4a359;
+        }
+
+        .metric-card {
+            background: #121018;
+            border: 1px solid #5a4221;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #a09070;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #d4a359;
+            margin-top: 4px;
+        }
+
+
     </style>
 
     </head>
 
 
-<body>
+
+
+    <body>
 
 
         <header>
             <h1>TinkerTick</h1>
-            <span class="status">Status: <span class="status-ok">Ready</span></span>
+            <span class="status">Status: <span id="engineStatus" class="status-ok">Ready</span></span>
                      </header>
 
 
@@ -141,12 +187,15 @@
                         <div class="editor-panel">
 
                             <h3>Source Code</h3>
-                            <p class="editor-hint">Paste TypeScript or JavaScript below to inspect its structure.</p>
 
+                            <textarea id="codeEditor" class="code-input" spellcheck="false">function greet(name)  {
+                                console.log(`Hello, ${name}!`); <!--this for loop is kept inside our <textarea> so our app has sample code ready to scan the second we open it-->
+                            }
+                            
+                            for (let i=0; i < 5; i++) {   
+                                greet("Inventor");
+                            }
 
-                            <textarea class="code-input" spellcheck="false">function greet(<name:string) {
-                                console.log('Hello, ${name}!');
-                            } 
                            </textarea>
                         </div>
 
@@ -154,10 +203,31 @@
                         <div class="canvas-panel">
 
 
-                            <!-- <canvas> creates a blank 500 x 500 pixel drawing board that JS can paint graphics into-->
-                            <canvas id="engineCanvas" width="500" height="500"></canvas>
+                            <!-- <canvas> creates a blank 460 x 460 pixel drawing board that JS can paint graphics into-->
+                            <canvas id="engineCanvas" width="460" height="460"></canvas>
                         </div>
-                    </div>
+
+
+
+                        <div class="metrics-panel">
+                            <h3>Diagnostics</h3>
+
+                            <div class="metric-card">
+                                <div class="metric-label">Functions</div>
+                                <div class="metric-value" id="functionCount">0</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-label">Loops</div>
+                            <div class="metric-value" id="loopCount">0</div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-label">Complexity</div>
+                                <div class="metric-value" id="complexityScore">Low</div>
+                            </div>
+                        </div>
+                     </div>
 
 
 
@@ -243,14 +313,3 @@
                         </script>
                         </body>
                         </html>
-
-
-
-
-
-
-
-
-
-
-    
