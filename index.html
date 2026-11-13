@@ -233,12 +233,105 @@
 
                     <!--JAVA SCRIPT CODE-->
                     <script>
+                        const editor = document.getElementById('codeEditor');  // links to the <textarea id="codeEditor"> typing box
+                        const funcCountEl = document.getElementById('funcCount'); // links to the <div id="funcCount"> number display 
+                        const loopCountEl = document.getElementById('loopCount');  // links to the <div id="loopCount"> number display
+                        const complexityScoreEl = document.getElementById('complexityScore');  // links to the <div id="complexityScore"> text display
+                        const statusEl = document.getElementById ('engineStatus');  // links to the <span id="engineStatus"> status text
+
+
+                        const FUNC_TYPES = new Set ( [
+                            'FunctionDeclaration',  // matches the standard functions like : function greet() {}
+                            'FunctionExpression',   // matches functions assigned to variables like : const greet = function() {}
+                            'ArrowFunctionExpression'   // matches arrow functions like : const greet = () => {}
+                        ]);
+
+                        const LOOP_TYPES = new Set ( [ 
+                            'ForStatement',
+                            'WhileStatement',
+                            'DoWhileStatement'
+                        ]);
+                        
+                        // starting rotation speed and starting outline color of the gears
+                        let gearSpeed = 0.012; 
+                        let gearColor = '#d4a359';
+
+                        function walkAst(node, counts) {   // counts how many times different parts of the code appear
+                            if (!node || typeof node !== 'object') return;  // if 'node' is empty or not a JS object, stop running this function immediately
+
+                            if (FUNC_TYPES.has(node.type)) counts.functions++;  // checks if a piece of code is a function, and if it  is, adds 1 to a total function counter
+                            if (LOOP_TYPES.has(node.type)) counts.loops++;   // checks if a piece of code is a loop, and if it is, adds 1 to a total loop counter
+
+                            
+                            for (const key of Object.keys(node)) {  // starts a loop that goes through that list of names one at a time, temporarily storing the current name in a variable called key
+                                const child = node[key];  // uses that key name to look inside node and grab the actual value attached to it
+
+                                if (Array.isArray(child)) {   // checks if a piece of data 'child' is a list of things rather than just a single thing
+                                    child.forEach((item) => walkAst(item, counts));  // if it is a list, it inspects every item inside that list one by one
+                                } else if 
+                                (child && typeof child.type === 'string') {  // 'child' checks that the child item actually exists and is not empty and 'typeof child.type === 'string':' confirms that the 'child' has a type label written
+                                    walkAst(child, counts);  // if both checks pass, the function steps down into that child item to explore its contents and update the counts tracker
+                                }
+                            }
+                            }
+
+
+
+                            function analyzeCode() {    
+                                try {
+                                    const ast = window.parser.parseCode(editor.value);  // sends the text from 'editor.value' to 'preload.js' so Acorn can parse it into a syntax tree (AST). 
+                                    const counts = { functions: 0, loops: 0 };  
+                                    walkAst(ast, counts);  // passes the syntax tree and the 'counts' object into 'walkAst' to count all the functions and loops
+
+                                    //updates the text on a webpage to show how many functions and loops were counted
+                                    funcCountEl.textContent = counts.functions;
+                                    loopCountEl.textContent = counts.loops;
+
+                                    const total = counts.functions + counts.loops;  // Adds functions and loops together to determine the complexity label and rotation speed.
+                                    if (total <= 2) {
+                                        complexityEl.textContent = 'Low';
+                                        gearSpeed = 0.012;
+                                    }
+
+                                    else if (total <= 5) {
+                                        complexityEl.textContent = 'Medium';
+                                        gearSpeed = 0.03;
+                                    }  
+
+                                    else {
+                                        complexityEl.textContent = 'High';
+                                        gearSpeed = 0.55;
+                                    }
+
+
+                                    statusEl.textContent = 'Ready';
+                                    statusEl.className = 'status-ok';
+                                    gearColor = '#d4a359';
+                                }  
+                                catch {
+                                    
+                                    // Runs when 'parseCode' fails due to syntax error in the user's code.
+                                    statusEl.textContent = 'Syntax Error';
+                                    statusEl.className = 'status-err';
+                                    gearSpeed = 0;
+                                    gearColor = '#e05a5a';
+                                
+                                }
+                            }
+
+
+                            editor.addEventListener('input', analyzeCode);
+                            analyzeCode();
+
+
+
+
                         const canvas = document.getElementById('engineCanvas');
                         const ctx = canvas.getContext('2d');   
-                        let angle = 0; 
+                        let angle = 0;
 
 
-                        function drawGear(x, y, radius, teeth) {
+                        function drawGear(x, y, radius, teeth, rotation) {
                             const toothDepth = 10; // sets how tall each gear tooth sticks out (10 pixels)
                            
                            // 'Math.PI * 2' equals a full 360-degree circle in radians 
@@ -248,8 +341,8 @@
 
                             ctx.save(); 
                             ctx.translate(x, y);  
-                            ctx.rotate(angle);  
-                            ctx.strokeStyle = '#d4a359' ; 
+                            ctx.rotate(rotation);
+                            ctx.strokeStyle = gearColor ; 
                             ctx.lineWidth = 3;  
 
 
@@ -298,14 +391,15 @@
                             ctx.strokeStyle = '#4a3820';
                             ctx.lineWidth= 4;
 
-                            // Draws the static outer circular frame centered at (250, 250) with a radius of 180 pixels.
+                            // Draws the static outer circular frame centered at (230, 230) with a radius of 180 pixels.
                             ctx.beginPath();
-                            ctx.arc(250, 250, 180, 0, Math.PI * 2);  
+                            ctx.arc(230, 230, 175, 0, Math.PI * 2);  
                             ctx.stroke();
 
-                            drawGear(250, 250, 80, 12);  
+                            drawGear(230, 230, 75, 14, angle);
+                            drawGear(325, 165, 35, 8, -angle * 1.75);
 
-                            angle += 0.008;  
+                            angle += gearSpeed;
                             requestAnimationFrame(render);  // Tells the browser to run 'render' again on the very next screen refresh (60 times per second) so the gear spins smoothly. 
                         }
 
@@ -313,3 +407,7 @@
                         </script>
                         </body>
                         </html>
+
+
+
+
