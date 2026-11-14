@@ -49,6 +49,7 @@
 
         .status {  /* Styles the 'Status: Ready' container on the right side of the header */
             font-size: 0.9rem;
+            margin-right: 12px;
         }
 
         .status-ok {  /* Styles the word 'Ready' */
@@ -61,6 +62,32 @@
             color: #e05a5a;
             font-weight: 600;
         }
+
+
+/* Styles for the Run and Build buttons in the header */
+
+        .top-actions {   
+            display: flex; 
+            align-items: center;
+        }
+
+        .top-actions-button { 
+            background: #221c2e;
+            color: #d4a359;
+            border: 1px solid #5a4221;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 8px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .top-actions button:hover {
+            background: #5a4221;
+            color: #fff;
+        }
     
 
         .workspace {   /* Styles the main middle area below the header */
@@ -71,7 +98,7 @@
 
 
         .editor-panel {  /* Styles the left panel where we type code*/
-            width: 35%;
+            width: 32%;
             background: #181522;
             border-right: 2px solid #3d2d18;
             padding: 16px;
@@ -101,6 +128,7 @@
             background: #0f0d14;
             color: #e0d0b0;
             border: 1px solid #3d2d18;
+            border-radius: 6px;
             padding: 12px; 
             font-family:'Courier New', Courier, monospace;
             font-size: 0.9rem;
@@ -115,9 +143,15 @@
 
 
 
-        .canvas-panel {  /* styles the right-hand area holding the spinning gear canvas */
+        .center-column {  /* Stacks the gear canvas above the bottom overview cards */
             flex: 1;
-            background: radial-gradient( circle, #221c2e 0%, #121018 100%);
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle, #221c2e 0%, #121018 100%);
+        }
+
+        .canvas-panel {  /* Centers the gear canvas inside the top area */
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -131,6 +165,69 @@
         }
 
 
+        /* BOTTOM ROW OF CARDS FOR PROJECT OVERVIEW AND DIAGNOSTICS */
+        .bottom-cards {
+            height: 140px;
+            display: flex; 
+            gap: 12px;
+            padding: 12px;
+            background: #15121c;
+            border-top: 2px solid #3d2d18;
+        }
+
+        .card {
+            flex: 1;
+            background: #181522;
+            border: 1px solid #5a4221;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #d4a359;
+        }
+
+        .card-desc {
+            color: #a09070; 
+            margin: 6px 0;
+        }
+
+        .progress-track {
+            background: #0f0d14;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill { 
+            width: 92%;
+            height: 100%;
+            background: #6bbe6b;
+            border-radius: 4px;
+            transition: width 0.2s ease, background 0.2s ease;
+        }
+
+        .health-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #a09070;
+            margin-top: 6px;
+        }
+
+        .diag-ok { 
+            color: #6bbe6b;
+            margin: 8px 0 0;
+        }
+
+        .diag-err {
+            color: #e05a5a;
+            margin: 8px 0 0;
+        }
+
+
 
         /* Right-side Diagnostics panel */
         .metrics-panel {
@@ -138,6 +235,9 @@
             background: #181522;
             border-left: 2px solid #3d2d18;
             padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .metrics-panel h3 {
@@ -180,6 +280,8 @@
         <header>
             <h1>TinkerTick</h1>
             <span class="status">Status: <span id="engineStatus" class="status-ok">Ready</span></span>
+            <button type="button" id="runBtn">Run</button>
+            <button type="button" id="buildBtn">Build</btn>
                      </header>
 
 
@@ -200,11 +302,29 @@
                         </div>
 
 
+                        <div class="center-column"> 
                         <div class="canvas-panel">
 
 
-                            <!-- <canvas> creates a blank 460 x 460 pixel drawing board that JS can paint graphics into-->
-                            <canvas id="engineCanvas" width="460" height="460"></canvas>
+                            <!-- <canvas> creates a blank 420 x 420 pixel drawing board that JS can paint graphics into-->
+                            <canvas id="engineCanvas" width="420" height="420"></canvas>
+                        </div>
+
+                        <div class="bottom-cards">
+                            <div class="card">
+                                <div class="card-title">Project Overview</div>
+                                <p class ="card-desc">AST distribution breakdown active</p>
+                                <div class="progress-track">
+                                    <div id="healthBar" class="progress-fill"></div>
+                                </div>
+                                <span class="health-label">Code Health: <span id="healthText" class="status-ok">92%</span></span>
+                            </div>
+                            
+
+                            <div class="card">
+                                <div class="card-title">Diagnostics</div>
+                                <p id="diagnosticMsg" class="diag-ok">No syntax errors detected.</p>
+                            </div>
                         </div>
 
 
@@ -226,6 +346,11 @@
                                 <div class="metric-label">Complexity</div>
                                 <div class="metric-value" id="complexityScore">Low</div>
                             </div>
+
+                            <div class="metric-card">
+                                <div class="metric-label">Memory</div>
+                                <div class="metric-value" id="memoryUsage">34%</div>
+                            </div>
                         </div>
                      </div>
 
@@ -238,6 +363,14 @@
                         const loopCountEl = document.getElementById('loopCount');  // links to the <div id="loopCount"> number display
                         const complexityScoreEl = document.getElementById('complexityScore');  // links to the <div id="complexityScore"> text display
                         const statusEl = document.getElementById ('engineStatus');  // links to the <span id="engineStatus"> status text
+
+                        
+                        // Links to the new Diagnostics text, Health Bar and Header Buttons respectively. 
+                        const diagnosticMsg = document.getElementById('diagnosticMsg');
+                        const healthBar = document.getElementById('healthBar');
+                        const healthText = document.getElementById('healthText');
+                        const runBtn = document.getElementById('runBtn');
+                        const buildBtn = document.getElementById('buildBtn');
 
 
                         const FUNC_TYPES = new Set ( [
@@ -307,14 +440,25 @@
                                     statusEl.textContent = 'Ready';
                                     statusEl.className = 'status-ok';
                                     gearColor = '#d4a359';
+
+
+                                    // Updates the bottom Diagnostics card and Health Bar when code is valid 
+                                    diagnosticMsg.textContent = 'No syntax errors detected.';
+                                    diagnosticMsg.className = 'diag-ok';
+                                    healthBar.style.width = '92%';
+                                    healthBar.style.background = '#6bbe6b';
+                                    healthText.textContent = '92%';
+                                    healthText.className = 'status-ok';
+
                                 }  
-                                catch {
+                                catch  (err) {
                                     
                                     // Runs when 'parseCode' fails due to syntax error in the user's code.
                                     statusEl.textContent = 'Syntax Error';
                                     statusEl.className = 'status-err';
                                     gearSpeed = 0;
                                     gearColor = '#e05a5a';
+
                                 
                                 }
                             }
