@@ -328,6 +328,14 @@
             margin-top: 4px;
         }
 
+        /* Style for the AST breakdown text */
+        .ast-summary {
+            font-size: 0.78rem;
+            color: #a09070;
+            margin-top: 6px;
+            font-family: Consolas, 'Courier New', monospace;
+        }
+
 
     </style>
 
@@ -344,6 +352,7 @@
             <span class="status">Status: <span id="engineStatus" class="status-ok">Ready</span></span>
             <button type="button" id="runBtn">Run</button>
             <button type="button" id="buildBtn">Build</btn>
+            <button type="button" id="formatBtn">Format</button>
                      </header>
 
 
@@ -427,6 +436,11 @@
                                 <div class="metric-label">Memory</div>
                                 <div class="metric-value" id="memoryUsage">34%</div>
                             </div>
+
+                            <div class="metric-card">
+                                <div class="metric-label">AST Breakdown</div>
+                                <div class="ast-summary" id="astSummary">Parsing tree...</div>
+                            </div>
                         </div>
                      </div>
 
@@ -450,6 +464,10 @@
 
                         // Companion speech 
                         const ineffaSpeech = document.getElementById('ineffaSpeech');
+
+                        // AST summary text and Format Button
+                        const astSummary = document.getElementById('astSummary');
+                        const formatBtn = document.getElementById('formatBtn');
 
 
                         const FUNC_TYPES = new Set ( [
@@ -519,6 +537,11 @@
                                     const loopPct = Math.round((counts.loops / totalNodes) * 100);
                                     const classPct = Math.round((counts.classes / totalNodes) * 100);
                                     const otherPct = Math.max(0, 100 - funcPct - loopPct - classPct);  // 'Math.max()' ensures otherPct never drops below 0 
+
+
+                                    // Updates the AST Breakdown card text 
+                                    astSummaryEl.textContent = `F: ${counts.functions} | L: ${counts.loops} | C: ${counts.classes} | O: ${counts.others}`;
+
 
                                     const total = counts.functions + counts.loops;  // Adds functions and loops together to determine the complexity label and rotation speed.
                                     if (total <= 2) {
@@ -592,6 +615,44 @@
                                 diagnosticMsg.textContent = 'Build package created.';
                                 diagnosticMsg.className = 'diag-ok';
                             }); 
+
+
+                        // Formats code indentation cleanly when Format is clicked 
+                        formatBtn.addEventListener('click', () => { 
+                            try {
+                                window.parser.parseCode(editor.value);
+
+                                let indent = 0;
+                                const formatted = editor.value
+                                  .split('\n')  // chops the entire text block into an array of individual lines wherever a line break occurs.
+                                  .map((line) => line.trim())  // visits every line in the list and removes all extra spaces at the start and the end.
+                                  .filter(Boolean)  
+                                  .map((line) => { 
+                                    if (line.startsWith('}'))indent = Math.max(0, indent -1);
+                                    const spacedLine = '   '.repeat(indent) + line;
+                                    if (line.endsWith('{')) indent++;
+                                    return spacedLine;
+                                  })
+                                  .join('\n'); // glues all the spaced lines back together into one text block separated by line breaks.
+
+
+                                editor.value = formatted;
+                                analyzeCode();
+
+                                // Updates the Diagnostics card when code is formatted.
+                                diagnosticMsg.textContent = 'Code formatted.';
+                                diagnosticMsg.className = 'diag-ok';
+
+                                // Updates the companion speech bubble text.
+                                ineffaSpeech.textContent = 'Clean and aligned. Every gear is in place.';
+                                 }
+
+                                 catch { 
+                                    diagnosticMsg.textContent = 'Cannot format code with syntax errors.';
+                                    diagnosticMsg.className = 'diag-err';
+                                 }
+                                });
+
 
 
                         const canvas = document.getElementById('engineCanvas');
@@ -677,5 +738,3 @@
                         </script>
                         </body>
                         </html>
-
-
