@@ -110,13 +110,39 @@
         .editor-panel h3 {  /* Styles the 'Source Code' sub-heading inside the left panel */
             margin: 0 0 6px;
             font-size: 1rem;
+            color: #d4a359;
         }
 
+        /* New Editor Tabs CSS */
+        .editor-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #3d2d18;
+            padding-bottom: 8px;
+        }
 
-        .editor-hint {   /* Styles the small helper sentence under 'Source Code */
-            margin: 0 0 12px;
-            font-size: 0.85rem;
-            color: #a09070;
+        .tab,
+        .tab-add { 
+            background: #121018;
+            color: #a09070; 
+            border: 1px solid #3d2d18;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.8 rem;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: #221c2e;
+            color: #d4a359;
+            border-color: #5a4221;
+            font-weight: 600;
+        }
+
+        .tab-add:hover {
+            color: #e0d0b0;
+            border-color: #5a4221;
         }
 
 
@@ -139,6 +165,42 @@
         .code-input:focus {  /* changes how the code box looks when we click inside it to type */
             outline: none;
             border-color: #d4a359;
+        }
+
+        /* CSS for the Companion Panel */
+        .companion-panel {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: #15121c;
+            border: 1px solid #3d2d18;
+            border-radius: 8px;
+        }
+
+        .companion-avatar {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            border: 2px solid #5a4221;
+            background: #221c2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .companion-speech {
+            flex: 1;
+            background: #181522;
+            border: 1px solid #5a4221;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            line-height: 1.4rem;
+            color: #d4a359;
         }
 
 
@@ -286,22 +348,35 @@
 
 
                      <div class="workspace">
-                        <div class="editor-panel">
+                        <div class="editor-panel"> 
+
+                            <!-- File tabs at the top of the editor-->
+                             <div class="editor-tabs">
+                                <button type="button" class="tab active">main.js</button>
+                                <button type="button" class="tab-add" id="addTabBtn">+</button>
+                             </div>
 
                             <h3>Source Code</h3>
 
                             <textarea id="codeEditor" class="code-input" spellcheck="false">function greet(name)  {
-                                console.log(`Hello, ${name}!`); <!--this for loop is kept inside our <textarea> so our app has sample code ready to scan the second we open it-->
+                                console.log(`Hello, ${name}!`);
                             }
                             
                             for (let i=0; i < 5; i++) {   
-                                greet("Inventor");
+                                greet("Inventor");   
                             }
 
                            </textarea>
+
+
+                           <!-- COMPANION ASSIST BOX BELOW THE EDITOR-->
+                            <div class="companion-panel">
+                                <div class="companion-avatar">⚙️</div>
+                                <div class="companion-speech" id="ineffaSpeech">Another invention? Let's make it extra special, hm? ✨ </div>
+                            </div>
                         </div>
 
-
+                        <!-- Canvas Engine + Bottom Overview Cards-->
                         <div class="center-column"> 
                         <div class="canvas-panel">
 
@@ -359,7 +434,7 @@
                     <!--JAVA SCRIPT CODE-->
                     <script>
                         const editor = document.getElementById('codeEditor');  // links to the <textarea id="codeEditor"> typing box
-                        const funcCountEl = document.getElementById('funcCount'); // links to the <div id="funcCount"> number display 
+                        const funcCountEl = document.getElementById('functionCount'); // links to the <div id="funcCount"> number display 
                         const loopCountEl = document.getElementById('loopCount');  // links to the <div id="loopCount"> number display
                         const complexityScoreEl = document.getElementById('complexityScore');  // links to the <div id="complexityScore"> text display
                         const statusEl = document.getElementById ('engineStatus');  // links to the <span id="engineStatus"> status text
@@ -459,7 +534,15 @@
                                     gearSpeed = 0;
                                     gearColor = '#e05a5a';
 
-                                
+
+                                // Shows the exact Acorn error message and drops the health bar to 30%
+                                const cleanError = err.message.split(' (')[0];
+                                diagnosticMsg.textContent = `Syntax Error: ${cleanError}`;
+                                diagnosticMsg.className = 'diag-err';
+                                healthBar.style.width = '30%';
+                                healthBar.style.background = '#e05a5a';
+                                healthText.textContent = '30%';
+                                healthText.className = 'status-err';
                                 }
                             }
 
@@ -467,7 +550,18 @@
                             editor.addEventListener('input', analyzeCode);
                             analyzeCode();
 
+                            // Connects the Run and Build buttons without using inline onclick attributes
+                            runBtn.addEventListener('click', () => { 
+                                analyzeCode();
+                                diagnosticMsg.textContent = 'Test run completed.' ;
+                                diagnosticMsg.className = 'diag-ok';
+                            });
 
+
+                            buildBtn.addEventListener('click', () => {
+                                diagnosticMsg.textContent = 'Build package created.';
+                                diagnosticMsg.className = 'diag-ok';
+                            }); 
 
 
                         const canvas = document.getElementById('engineCanvas');
@@ -530,18 +624,20 @@
                         function render() { // outputs the visual UI of the canvas
                             ctx.clearRect(0, 0, canvas.width, canvas.height); // '.clearRect' prevents smearing by wiping the entire 500 x 500 canvas clean before drawing the next frame
 
+   
+                            // ( Adjusted the co-ordinates to fit the smaller 420 X 420 canvas)
 
                             // Sets the pen color and thickness for the large outer ring
                             ctx.strokeStyle = '#4a3820';
-                            ctx.lineWidth= 4;
+                            ctx.lineWidth= 5;
 
-                            // Draws the static outer circular frame centered at (230, 230) with a radius of 180 pixels.
+                            // Draws the static outer circular frame centered at (210, 210) with a radius of 180 pixels.
                             ctx.beginPath();
-                            ctx.arc(230, 230, 175, 0, Math.PI * 2);  
+                            ctx.arc(210, 210, 160, 0, Math.PI * 2);  
                             ctx.stroke();
 
-                            drawGear(230, 230, 75, 14, angle);
-                            drawGear(325, 165, 35, 8, -angle * 1.75);
+                            drawGear(210, 210, 70, 14, angle);
+                            drawGear(295, 150, 30, 8, -angle * 1.8);
 
                             angle += gearSpeed;
                             requestAnimationFrame(render);  // Tells the browser to run 'render' again on the very next screen refresh (60 times per second) so the gear spins smoothly. 
