@@ -22,7 +22,8 @@ function createWindow() {  // Function is a reusable block of code designed to p
 
             preload: path.join(__dirname, 'preload.js'),  
             contextIsolation: true,  // here, choosing 'true' keeps Electron's internal code separate from our website's code for security.
-            nodeIntegration: false,  // here, choosing 'false' blocks our HTML page from directly accessing our computer's file system.
+            nodeIntegration: false, // here, choosing 'false' blocks our HTML page from directly accessing our computer's file system.
+            sandbox: false
         }
     })
 
