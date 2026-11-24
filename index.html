@@ -122,6 +122,13 @@
             padding-bottom: 8px;
         }
 
+        /* Allows open file tabs to sit in a wrapping row */ 
+        .tab-list {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 6px;
+        }
+
         .tab,
         .tab-add { 
             background: #121018;
@@ -336,6 +343,14 @@
             font-family: Consolas, 'Courier New', monospace;
         }
 
+        /* Style for the live cursor line */
+        .cursor-pos {
+            font-size: 0.8rem;
+            color: #d4a359;
+            margin-top: 6px;
+            font-family:'Courier New', Courier, monospace;
+        }
+
 
     </style>
 
@@ -343,7 +358,7 @@
 
 
 
-
+<!-- HTML CODE-->
     <body>
 
 
@@ -361,8 +376,8 @@
 
                             <!-- File tabs at the top of the editor-->
                              <div class="editor-tabs">
-                                <button type="button" class="tab active">main.js</button>
-                                <button type="button" class="tab-add" id="addTabBtn">+</button>
+                                <div id="tabList" class="tab-list"></div>
+                                <button type="button" class="tab-add" id="newTabBtn" title="New File">+</button>
                              </div>
 
                             <h3>Source Code</h3>
@@ -441,6 +456,11 @@
                                 <div class="metric-label">AST Breakdown</div>
                                 <div class="ast-summary" id="astSummary">Parsing tree...</div>
                             </div>
+
+                            <div class="metric-card">
+                                <div class="metric-label">Cursor Position</div>
+                                <div class="cursor-pos" id="cursorPos">Line 1, Column 1</div>
+                            </div>
                         </div>
                      </div>
 
@@ -453,7 +473,6 @@
                         const loopCountEl = document.getElementById('loopCount');  // links to the <div id="loopCount"> number display
                         const complexityScoreEl = document.getElementById('complexityScore');  // links to the <div id="complexityScore"> text display
                         const statusEl = document.getElementById ('engineStatus');  // links to the <span id="engineStatus"> status text
-
                         
                         // Links to the new Diagnostics text, Health Bar and Header Buttons respectively. 
                         const diagnosticMsg = document.getElementById('diagnosticMsg');
@@ -468,6 +487,13 @@
                         // AST summary text and Format Button
                         const astSummaryEl = document.getElementById('astSummary');
                         const formatBtn = document.getElementById('formatBtn');
+
+                        // Cursor Position readout
+                        const cursorPosEl = document.getElementById('cursorPos');
+
+                        // Links to the tab list container and '+' button 
+                        const tabListEl = document.getElementById('tabList');
+                        const newTabBtn = document.getElementById('newTabBtn');
 
 
                         const FUNC_TYPES = new Set ( [
@@ -518,7 +544,6 @@
                                 }
                             }
                             }
-
 
 
                             function analyzeCode() {    
@@ -655,6 +680,80 @@
 
 
 
+                                // Updates the Line and Column numbers whenever the cursor moves
+                                function updateCursorPosition() {
+                                    const textBefore = editor.value.slice(0, editor.selectionStart);
+                                    const lines = textBefore.split('\n');
+                                    const line = lines.length;
+                                    const col = lines[lines.length - 1].length + 1;
+
+                                    cursorPosEl.textContent = `Line ${line}, Col ${col}`;
+                                }
+
+                                ['keyup', 'click', 'input'].forEach((eventName) => { editor.addEventListener(eventName, updateCursorPosition); 
+                                });
+
+
+                                
+                                //Multi-tab file state and switching logic
+                                const tabs = [
+                                    { id: 'tab-1', title: 'main.js', content: editor.value }
+                                ];
+                                let activeTabId = 'tab-1';
+                                let tabCounter = 1;
+
+                                function syncActiveTab() {
+                                    const current = tabs.find((tab) => tab.id === activeTabId); 
+                                    if (current) {
+                                        current.content = editor.value;
+                                    }
+                                }
+
+                                function renderTabs() {
+                                    tabListEl.innerHTML = '';
+
+                                    tabs.forEach((tab) => { 
+                                        const btn = document.createElement('button');
+                                        btn.type = 'button';
+                                        btn.textContent = tab.title;
+                                        btn.className = tab.id === activeTabId ? 'tab active' : 'tab';
+
+                                        btn.addEventListener('click', () => { 
+                                            if (tab.id === activeTabId) return;
+                                            syncActiveTab();
+                                            activeTabId = tab.id;
+                                            editor.value = tab.content;
+                                            renderTabs(); 
+                                            analyzeCode();
+                                            updateCursorPosition();
+                                        });
+
+                                        tabListEl.appendChild(btn);
+                                    });
+                                }
+
+                                newTabBtn.addEventListener('click', () => { 
+                                    syncActiveTab();
+                                    tabCounter++;
+                                    const newId = `tab-${tabCounter}`;
+                                    const title = `module_${tabCounter}.js`;
+                                    const starterCode = `// ${title}\nfunction runTask () {\n return ${tabCounter};\n}n`;
+
+                                    tabs.push({ id: newId, title, content: starterCode });
+                                    activeTabId = newId;
+                                    editor.value = starterCode;
+
+                                    renderTabs();
+                                    analyzeCode();
+                                    updateCursorPosition();
+                                    ineffaSpeech.textContent = `Switched to new file: ${title}`;
+                                });
+
+                                editor.addEventListener('input', syncActiveTab);
+                                renderTabs();
+
+
+
                         const canvas = document.getElementById('engineCanvas');
                         const ctx = canvas.getContext('2d');   
                         let angle = 0;
@@ -738,3 +837,4 @@
                         </script>
                         </body>
                         </html>
+
